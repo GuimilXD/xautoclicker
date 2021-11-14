@@ -1,6 +1,6 @@
 CC := gcc
 CFLAGS := -Wall -pedantic -std=c17
-LDFLAGS := 
+LDFLAGS := -lpthread
 LIBS := x11
 SRC := src
 OBJ := obj

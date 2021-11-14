@@ -1,39 +1,61 @@
-#include <stdlib.h>
+#include <X11/Xlib.h>
+#include <fcntl.h>
 #include <stdio.h>
-#include<unistd.h>
-#include<sys/types.h>
-#include<sys/stat.h>
-#include<fcntl.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-int main(int argc, char *argv[])
-{
+#include <pthread.h>
+
+#include "mouse_click.h"
+
+#define DESIRED_CPS 10
+
+
+void *xdotool_check_left_clicking(void *is_left_click_pressed) {
+  while(1) {
+    int *a = (int *)(is_left_click_pressed);
+    if(*a == 1) {
+      mouse_click(1);
+    }
+
+    usleep(1000000 / DESIRED_CPS);
+  }
+}
+
+
+int main(int argc, char *argv[]) {
   int fd, bytes;
-unsigned char data[4];
+  unsigned char data[4];
 
-const char *pDevice = "/dev/input/mice";
+  const char *pDevice = "/dev/input/mice";
 
-fd = open(pDevice, O_RDWR);
-if(fd == -1)
-{
+  fd = open(pDevice, O_RDWR);
+  if (fd == -1) {
     printf("ERROR Opening %s\n", pDevice);
     return -1;
-}
+  }
 
-int left, middle, right;
-signed char x, y;
 
-// Read Mouse
-while(1) {
-bytes = read(fd, data, sizeof(data));
+  int is_left_click_pressed = 0;
 
-if(bytes > 0)
-{
-    left = data[0] & 0x1;
-    right = data[0] & 0x2;
-    middle = data[0] & 0x4;
+  pthread_t left_click_thread; 
+  pthread_create(&left_click_thread, NULL, xdotool_check_left_clicking, (void *)&is_left_click_pressed);
 
-    printf("left=%d, middle=%d, right=%d\n", left, middle, right);
-   }
-}
- return 0;
+  int left;
+
+  while (1) {
+    bytes = read(fd, data, sizeof(data));
+
+    if (bytes > 0) {
+      left = data[0] & 0x1;
+
+      if (left)
+	is_left_click_pressed = 1;
+      else
+        is_left_click_pressed = 0;
+    }
+  }
+  return 0;
 }
