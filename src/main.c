@@ -10,7 +10,7 @@
 
 #include "mouse_click.h"
 
-#define DESIRED_CPS 10
+#define DESIRED_CPS 100
 
 
 void *xdotool_check_left_clicking(void *is_left_click_pressed) {
